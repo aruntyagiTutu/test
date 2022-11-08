@@ -1,5 +1,5 @@
 import { MenuItem } from './entities/menu-item.entity';
-import { Repository } from "typeorm";
+import { Repository, getManager } from "typeorm";
 import App from "../../app";
 
 export class MenuItemsService {
@@ -86,6 +86,40 @@ export class MenuItemsService {
   */
 
   async getMenuItems() {
+    const q_get_menu_items = `select * from menuItems`;
+
+    var manager = getManager();
+    var menuItems = await manager.query(q_get_menu_items);
+
+
+    // runs in O(N) time
+    const menuItemMap  = new Map();
+
+    for(var idx=0; idx < menuItems.total; idx++)
+    {
+        const item = menuItems.data[idx];
+        menuItemMap.set(item.id, item);
+    }
+
+    for(var idx=0; idx < menuItems.total; idx++)
+    {
+        const item = menuItems.data[idx];
+
+        const parentId = item.parentId;
+        if(parentId == null) continue;
+        const parent = menuItemMap.get(parentId);
+        parent.children.push(item);
+    }
+
+
+    var result: any[] = []
+
+    menuItemMap.forEach((value: any, key: string) => {
+        result.push(value);
+    });
+
+    return result;
+
     throw new Error('TODO in task 3');
   }
 }
